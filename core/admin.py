@@ -30,3 +30,14 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.category.operation_type.get_name_display()
 
     get_operation_type.short_description = 'Вид операции'
+
+
+@admin.register(PlannedBudget)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'category', 'sum', 'date', )
+    list_filter = ('user', 'category__operation_type', 'category', 'date', )
+
+    def get_operation_type(self, obj):
+        return obj.category.operation_type.get_name_display()
+
+    get_operation_type.short_description = 'Планируемый бюджет'
