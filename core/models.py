@@ -63,6 +63,7 @@ class Transaction(models.Model):
 class PlannedBudget(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
     sum = models.DecimalField(verbose_name='Сумма', max_digits=30, decimal_places=2, default=0)
     date = models.DateField(verbose_name='Месяц бюджета', default=timezone.now())
 
