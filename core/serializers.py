@@ -27,7 +27,11 @@ class PlannedBudgetSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(
         default=serializers.CurrentUserDefault(),
     )
+    category_name = serializers.SerializerMethodField('get_category_name')
 
     class Meta:
         model = PlannedBudget
-        fields = ('id', 'category', 'sum', 'date', 'user')
+        fields = ('id', 'category_name', 'sum', 'user')
+
+    def get_category_name(self, obj):
+        return obj['category__name']

@@ -55,8 +55,10 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user_id = self.request.user.id
-        queryset = PlannedBudget.objects\
-            .filter(user_id=user_id)\
+        queryset = PlannedBudget.objects \
+            .select_related('category') \
+            .filter(user_id=user_id) \
+            .values('id', 'category__name', 'sum') \
             .all()
         return queryset
 
