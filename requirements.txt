@@ -3,3 +3,4 @@ psycopg2-binary==2.8.4
 djangorestframework==3.11.0
 djangorestframework-simplejwt==4.4.0
 django-environ==0.4.5
+django-rest-registration==0.5.6

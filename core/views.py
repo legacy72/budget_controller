@@ -22,6 +22,17 @@ class BillViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    Вьюшка для CRUD'a категорий
+    """
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        queryset = Category.objects.all()
+        return queryset
+
+
 class TransactionViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a транзакций
@@ -31,13 +42,15 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user_id = self.request.user.id
         queryset = Transaction.objects\
-            .filter(user_id=user_id)\
+            .filter(user_id=user_id, bill__user_id=user_id)\
             .all()
         return queryset
 
     def perform_create(self, serializer):
         data = serializer.validated_data
         bill = data['bill']
+        if self.request.user.id != bill.user_id:
+            raise Exception('У пользователя нет такого счета')
         operation_type = data['category'].operation_type.name
         if operation_type == 'income':
             bill.sum += data['sum']
@@ -58,7 +71,6 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
         queryset = PlannedBudget.objects \
             .select_related('category') \
             .filter(user_id=user_id) \
-            .values('id', 'category__name', 'sum') \
             .all()
         return queryset
 

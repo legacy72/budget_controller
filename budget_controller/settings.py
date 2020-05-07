@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'rest_registration',
 ]
 
 REST_FRAMEWORK = {
@@ -113,6 +114,11 @@ AUTH_PASSWORD_VALIDATORS = [
     # {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+REST_REGISTRATION = {
+    'REGISTER_VERIFICATION_ENABLED': False,
+    'RESET_PASSWORD_VERIFICATION_ENABLED': False,
+    'REGISTER_EMAIL_VERIFICATION_ENABLED': False,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/

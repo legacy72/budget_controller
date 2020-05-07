@@ -7,6 +7,8 @@ router = routers.DefaultRouter()
 
 # CRUD для счетов
 router.register('bills', BillViewSet, basename='bills')
+# CRUD для счетов
+router.register('categories', CategoryViewSet, basename='categories')
 # CRUD для операций
 router.register('transactions', TransactionViewSet, basename='transactions')
 # CRUD для бюджета
