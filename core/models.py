@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
+from django.utils.timezone import now as now_local
 
 
 class Bill(models.Model):
@@ -8,7 +8,7 @@ class Bill(models.Model):
 
     name = models.CharField(verbose_name='Название', max_length=255)
     sum = models.DecimalField(verbose_name='Сумма', max_digits=30, decimal_places=2)
-    created_date = models.DateTimeField(verbose_name='Дата создания', default=timezone.now)
+    created_date = models.DateTimeField(verbose_name='Дата создания', default=now_local)
 
     class Meta:
         verbose_name = 'Счет'
@@ -50,7 +50,7 @@ class Transaction(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)
 
-    date = models.DateTimeField(verbose_name='Дата операции', default=timezone.now)
+    date = models.DateTimeField(verbose_name='Дата операции', default=now_local)
     sum = models.DecimalField(verbose_name='Сумма', max_digits=30, decimal_places=2)
     tag = models.CharField(verbose_name='Тег', max_length=255, null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
@@ -65,7 +65,7 @@ class PlannedBudget(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     sum = models.DecimalField(verbose_name='Сумма', max_digits=30, decimal_places=2, default=0)
-    date = models.DateField(verbose_name='Месяц бюджета', default=timezone.now())
+    date = models.DateField(verbose_name='Месяц и год бюджета', default=now_local)
 
     class Meta:
         verbose_name = 'Планируемый бюджет'

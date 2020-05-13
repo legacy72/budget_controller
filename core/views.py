@@ -1,11 +1,43 @@
-import json
-from decimal import Decimal
-
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from django.utils import timezone
 
 from .serializers import *
-from .models import *
+from .models import (
+    Bill, OperationType, Category, Transaction, PlannedBudget
+)
+
+
+@api_view(['POST'])
+def registration_view(request):
+    """
+    Вьюшка для создания пользователя
+    По умолчанию пользователю создается нулевой бюджет для каждой категории
+
+    :param request: username - логин
+    :param request: email - почта
+    :param request: password - пароль
+    :param request: repeat_password - повторный пароль для подтверждения
+    :return:
+    """
+    if request.method == 'POST':
+        serializer = UserSerializer(data=request.data)
+        data = {}
+        if serializer.is_valid():
+            user = serializer.save()
+            categories = Category.objects.all()
+            for category in categories:
+                planned_budget = PlannedBudget(
+                    user=user,
+                    category=category,
+                    sum=0,
+                )
+                planned_budget.save()
+            data['response'] = 'Пользователь успешно зарегистрирован'
+        else:
+            data = serializer.errors
+        return Response(data)
 
 
 class BillViewSet(viewsets.ModelViewSet):
@@ -63,15 +95,24 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class PlannedBudgetViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a бюджета
+
+    :param request: month - месяц в формате числа (1, 2, 3, ...) (если не передан, то берется текущий месяц)
+    :param request: year - год в формате числа (2019, 2020, ...) (если не передан, то берется текущий год)
     """
     serializer_class = PlannedBudgetSerializer
 
     def get_queryset(self):
         user_id = self.request.user.id
+        month = self.request.query_params.get('month')
+        year = self.request.query_params.get('year')
+
         queryset = PlannedBudget.objects \
             .select_related('category') \
-            .filter(user_id=user_id) \
-            .all()
+            .filter(
+                user_id=user_id,
+                date__month=month if month else timezone.now().month,
+                date__year=year if year else timezone.now().year,
+            ).all()
         return queryset
 
 
@@ -84,27 +125,30 @@ class CurrentSituationViewSet(viewsets.ViewSet):
 
         planned_budget = PlannedBudget.objects.filter(
             user_id=user_id,
-            date__month__gte=timezone.now().month,
+            date__month=timezone.now().month,
+            date__year=timezone.now().year,
         ).all()
 
         fact_budget = []
         for planned_budget_by_category in planned_budget:
             transactions_by_category = Transaction.objects.filter(
                 user_id=user_id,
-                date__year=timezone.now().year,
                 date__month=timezone.now().month,
+                date__year=timezone.now().year,
                 category_id=planned_budget_by_category.category_id,
             ).all()
 
             fact_budget_by_category = {
                 'category': planned_budget_by_category.category.name,
+                'operation_type': planned_budget_by_category.category.operation_type.id,
+                'operation_type_name': planned_budget_by_category.category.operation_type.name,
                 'planed': planned_budget_by_category.sum,  # сколько планируется заработать/потратить
                 'fact': 0,  # сколько по факту заработал/потратил
-                'need/can': planned_budget_by_category.sum,  # сколько осталось заработать/потратить
+                'balance': planned_budget_by_category.sum,  # сколько осталось заработать/потратить
             }
 
             for tranz in transactions_by_category:
-                fact_budget_by_category['need/can'] -= tranz.sum
+                fact_budget_by_category['balance'] -= tranz.sum
                 fact_budget_by_category['fact'] += tranz.sum
 
             fact_budget.append(fact_budget_by_category)

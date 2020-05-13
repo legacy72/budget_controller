@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from core.urls import router as core_router
-
+from core.views import registration_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('core/', include(core_router.urls)),
     path('accounts/', include('rest_registration.api.urls')),
+    path('register', registration_view, name='register'),
 ]

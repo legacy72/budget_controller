@@ -3,6 +3,30 @@ from rest_framework import serializers, fields
 from .models import *
 
 
+class UserSerializer(serializers.ModelSerializer):
+    repeat_password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password', 'repeat_password')
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def save(self):
+        user = User(
+            email=self.validated_data['email'],
+            username=self.validated_data['username'],
+        )
+        password = self.validated_data['password']
+        repeat_password = self.validated_data['repeat_password']
+        if password != repeat_password:
+            raise serializers.ValidationError({'password': 'Пароли не совпадают'})
+        user.set_password(password)
+        user.save()
+        return user
+
+
 class BillSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(
         default=serializers.CurrentUserDefault(),
@@ -54,4 +78,4 @@ class PlannedBudgetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlannedBudget
-        fields = ('id', 'category', 'category_name', 'sum', 'user')
+        fields = ('id', 'category', 'category_name', 'sum', 'date', 'user')
