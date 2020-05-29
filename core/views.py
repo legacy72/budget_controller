@@ -1,3 +1,5 @@
+from django.db.models import Q
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -47,9 +49,9 @@ class BillViewSet(viewsets.ModelViewSet):
     serializer_class = BillSerializer
 
     def get_queryset(self):
-        user_id = self.request.user.id
+        user = self.request.user.id
         queryset = Bill.objects\
-            .filter(user_id=user_id)\
+            .filter(user=user)\
             .all()
         return queryset
 
@@ -61,7 +63,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
     def get_queryset(self):
-        queryset = Category.objects.all()
+        user = self.request.user.id
+        queryset = Category.objects\
+            .filter(Q(user=user) | Q(user__isnull=True))\
+            .all()
         return queryset
 
 
@@ -72,29 +77,52 @@ class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
 
     def get_queryset(self):
-        user_id = self.request.user.id
+        user = self.request.user.id
         queryset = Transaction.objects\
-            .filter(user_id=user_id, bill__user_id=user_id)\
+            .filter(user=user, bill__user=user)\
             .all()
         return queryset
 
-    def perform_create(self, serializer):
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         data = serializer.validated_data
+
+        user = data['user']
+        category_user = data['category'].user
         bill = data['bill']
-        if self.request.user.id != bill.user_id:
-            raise Exception('У пользователя нет такого счета')
+
+        if category_user and category_user != user:
+            return Response(
+                {'Error': 'У Вас нет такой категории'}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if self.request.user != bill.user:
+            return Response(
+                {'Error': 'У Вас нет такого счета'}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         operation_type = data['category'].operation_type.name
         if operation_type == 'income':
             bill.sum += data['sum']
         elif operation_type == 'expense':
             bill.sum -= data['sum']
         bill.save()
+
         serializer.save()
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class PlannedBudgetViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a бюджета
+
+    P.S. Для создания день можно указывать любой, учитываться будет только месяц и год
 
     :param request: month - месяц в формате числа (1, 2, 3, ...) (если не передан, то берется текущий месяц)
     :param request: year - год в формате числа (2019, 2020, ...) (если не передан, то берется текущий год)
@@ -102,18 +130,49 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
     serializer_class = PlannedBudgetSerializer
 
     def get_queryset(self):
-        user_id = self.request.user.id
-        month = self.request.query_params.get('month')
-        year = self.request.query_params.get('year')
+        user = self.request.user.id
+        month = self.request.query_params.get('month', timezone.now().month)
+        year = self.request.query_params.get('year', timezone.now().year)
 
         queryset = PlannedBudget.objects \
             .select_related('category') \
             .filter(
-                user_id=user_id,
-                date__month=month if month else timezone.now().month,
-                date__year=year if year else timezone.now().year,
+                user=user,
+                date__month=month,
+                date__year=year,
             ).all()
         return queryset
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+
+        category_user = data['category'].user
+        user = data['user']
+        if category_user and category_user != user:
+            return Response(
+                {'Error': 'У Вас нет такой категории'}, status=status.HTTP_400_BAD_REQUEST
+            )
+        planned_budget = PlannedBudget.objects \
+            .select_related('category') \
+            .filter(
+                user=user,
+                category=data['category'],
+                date__month=data['date'].month,
+                date__year=data['date'].year,
+            ).all()
+        if planned_budget:
+            return Response(
+                {'Error': 'На текущий месяц уже создана данная категория'}, status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer.save()
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class CurrentSituationViewSet(viewsets.ViewSet):
@@ -121,10 +180,10 @@ class CurrentSituationViewSet(viewsets.ViewSet):
     Вьюшка для бюджета по категориям
     """
     def list(self, request):
-        user_id = self.request.user.id
+        user = self.request.user.id
 
         planned_budget = PlannedBudget.objects.filter(
-            user_id=user_id,
+            user=user,
             date__month=timezone.now().month,
             date__year=timezone.now().year,
         ).all()
@@ -132,7 +191,7 @@ class CurrentSituationViewSet(viewsets.ViewSet):
         fact_budget = []
         for planned_budget_by_category in planned_budget:
             transactions_by_category = Transaction.objects.filter(
-                user_id=user_id,
+                user=user,
                 date__month=timezone.now().month,
                 date__year=timezone.now().year,
                 category_id=planned_budget_by_category.category_id,
@@ -161,14 +220,14 @@ class BudgetViewSet(viewsets.ViewSet):
     Вьюшка для всего бюджета
     """
     def list(self, request):
-        user_id = self.request.user.id
+        user = self.request.user.id
         transactions = Transaction.objects.filter(
-            user_id=user_id,
+            user=user,
             date__year=timezone.now().year,
             date__month=timezone.now().month,
         ).all()
         planned_budgets = PlannedBudget.objects.filter(
-            user_id=user_id,
+            user=user,
             date__month__gte=timezone.now().month,
         ).all()
 

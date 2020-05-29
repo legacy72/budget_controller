@@ -38,6 +38,9 @@ class BillSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(
+        default=serializers.CurrentUserDefault(),
+    )
     operation_type_name = serializers.StringRelatedField(
         many=False,
         source='operation_type',
@@ -46,7 +49,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'operation_type', 'operation_type_name')
+        fields = ('id', 'user', 'name', 'operation_type', 'operation_type_name')
 
 
 class TransactionSerializer(serializers.ModelSerializer):
