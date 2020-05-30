@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from .serializers import *
 from .models import (
-    Bill, OperationType, Category, Transaction, PlannedBudget
+    Bill, Category, Transaction, PlannedBudget
 )
 
 
@@ -23,12 +23,18 @@ def registration_view(request):
     :param request: repeat_password - повторный пароль для подтверждения
     :return:
     """
+    # {
+    # "username": "test",
+    # "email": "test@mail.ru",
+    # "password": "test",
+    # "repeat_password ": "test"
+    # }
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
         data = {}
         if serializer.is_valid():
             user = serializer.save()
-            categories = Category.objects.all()
+            categories = Category.objects.filter(user__isnull=True).all()
             for category in categories:
                 planned_budget = PlannedBudget(
                     user=user,
@@ -44,7 +50,9 @@ def registration_view(request):
 
 class BillViewSet(viewsets.ModelViewSet):
     """
-    Вьюшка для CRUD'a счетов юзеров
+    Вьюшка для CRUD'a счетов текущего пользователя
+
+    Если не указывается дата создания, то ставится текущая по умолчанию
     """
     serializer_class = BillSerializer
 
@@ -59,6 +67,9 @@ class BillViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a категорий
+
+    Если заходить под анонимым пользователем, то будут показаны основные категории
+    Если под конкретным, то основные+личные
     """
     serializer_class = CategorySerializer
 
@@ -73,6 +84,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a транзакций
+
+    Если не указывается дата создания, то ставится текущая по умолчанию
     """
     serializer_class = TransactionSerializer
 
@@ -120,7 +133,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
 class PlannedBudgetViewSet(viewsets.ModelViewSet):
     """
-    Вьюшка для CRUD'a бюджета
+    Вьюшка для CRUD'a планируемого бюджета
 
     P.S. Для создания день можно указывать любой, учитываться будет только месяц и год
 
@@ -177,7 +190,16 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
 
 class CurrentSituationViewSet(viewsets.ViewSet):
     """
-    Вьюшка для бюджета по категориям
+    Вьюшка для просмотра текущего состояния бюджета по категориям текушего месяца
+    
+    category - id категории
+    category_name - название категории
+    operation_type - id типа операции
+    operation_type_name - название операции
+    planed - планировано было заработать/потратить
+    fact - фактически было заработано/потрачено
+    balance - остаток (если отрицательный у категории дохода, то значит перерасход, если у прибыли - то заработано
+                       больше чем планировалось)
     """
     def list(self, request):
         user = self.request.user.id
@@ -198,7 +220,8 @@ class CurrentSituationViewSet(viewsets.ViewSet):
             ).all()
 
             fact_budget_by_category = {
-                'category': planned_budget_by_category.category.name,
+                'category': planned_budget_by_category.category,
+                'category_name': planned_budget_by_category.category.name,
                 'operation_type': planned_budget_by_category.category.operation_type.id,
                 'operation_type_name': planned_budget_by_category.category.operation_type.name,
                 'planed': planned_budget_by_category.sum,  # сколько планируется заработать/потратить
@@ -217,7 +240,15 @@ class CurrentSituationViewSet(viewsets.ViewSet):
 
 class BudgetViewSet(viewsets.ViewSet):
     """
-    Вьюшка для всего бюджета
+    Вьюшка для просмотра всего бюджета в текущем месяце
+
+    plan_income - планируемый доход
+    fact_income - фактический дохо
+    plan_expense - планирымый расход
+    fact_expense - фактический расход
+    plan_saving_money - сколько было запланировано сохранить средств
+    fact_saving_money - сколько фактически получилось сохранить средств
+    money_to_spend - остаток, сколько можно ещё потратить (если чило отрициальное, значит вышел за пределы бюджета)
     """
     def list(self, request):
         user = self.request.user.id

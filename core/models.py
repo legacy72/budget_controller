@@ -34,7 +34,7 @@ class OperationType(models.Model):
 
 
 class Category(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     operation_type = models.ForeignKey(OperationType, on_delete=models.CASCADE)
     name = models.CharField(verbose_name='Название', max_length=255)
 
