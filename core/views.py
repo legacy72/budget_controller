@@ -220,7 +220,7 @@ class CurrentSituationViewSet(viewsets.ViewSet):
             ).all()
 
             fact_budget_by_category = {
-                'category': planned_budget_by_category.category,
+                'category': planned_budget_by_category.category.id,
                 'category_name': planned_budget_by_category.category.name,
                 'operation_type': planned_budget_by_category.category.operation_type.id,
                 'operation_type_name': planned_budget_by_category.category.operation_type.name,
@@ -248,7 +248,7 @@ class BudgetViewSet(viewsets.ViewSet):
     fact_expense - фактический расход
     plan_saving_money - сколько было запланировано сохранить средств
     fact_saving_money - сколько фактически получилось сохранить средств
-    money_to_spend - остаток, сколько можно ещё потратить (если чило отрициальное, значит вышел за пределы бюджета)
+    money_to_spend - остаток, сколько можно ещё потратить (если число отрициальное, значит вышел за пределы бюджета)
     """
     def list(self, request):
         user = self.request.user.id
