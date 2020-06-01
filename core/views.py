@@ -1,9 +1,11 @@
 from django.db.models import Q
 from rest_framework import status
+from rest_framework import filters
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.utils import timezone
+from url_filter.integrations.drf import DjangoFilterBackend
 
 from .serializers import *
 from .models import (
@@ -55,6 +57,8 @@ class BillViewSet(viewsets.ModelViewSet):
     Если не указывается дата создания, то ставится текущая по умолчанию
     """
     serializer_class = BillSerializer
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
+    filter_fields = ['id', 'user', 'name', 'sum', 'created_date']
 
     def get_queryset(self):
         user = self.request.user.id
@@ -72,6 +76,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     Если под конкретным, то основные+личные
     """
     serializer_class = CategorySerializer
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
+    filter_fields = ['id', 'user', 'operation_type', 'name']
 
     def get_queryset(self):
         user = self.request.user.id
@@ -88,6 +94,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
     Если не указывается дата создания, то ставится текущая по умолчанию
     """
     serializer_class = TransactionSerializer
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
+    filter_fields = ['id', 'user', 'category', 'bill', 'date', 'sum', 'tag']
 
     def get_queryset(self):
         user = self.request.user.id
@@ -141,6 +149,8 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
     :param request: year - год в формате числа (2019, 2020, ...) (если не передан, то берется текущий год)
     """
     serializer_class = PlannedBudgetSerializer
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
+    filter_fields = ['id', 'user', 'category', 'sum', 'date']
 
     def get_queryset(self):
         user = self.request.user.id
@@ -188,9 +198,12 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
         )
 
 
-class CurrentSituationViewSet(viewsets.ViewSet):
+class BalanceViewSet(viewsets.ViewSet):
     """
-    Вьюшка для просмотра текущего состояния бюджета по категориям текушего месяца
+    Вьюшка для просмотра текущего состояния бюджета по категориям
+
+    :param request: month - месяц в формате числа (1, 2, 3, ...) (если не передан, то берется текущий месяц)
+    :param request: year - год в формате числа (2019, 2020, ...) (если не передан, то берется текущий год)
     
     category - id категории
     category_name - название категории
@@ -203,11 +216,13 @@ class CurrentSituationViewSet(viewsets.ViewSet):
     """
     def list(self, request):
         user = self.request.user.id
+        month = self.request.query_params.get('month', timezone.now().month)
+        year = self.request.query_params.get('year', timezone.now().year)
 
         planned_budget = PlannedBudget.objects.filter(
             user=user,
-            date__month=timezone.now().month,
-            date__year=timezone.now().year,
+            date__month=month,
+            date__year=year,
         ).all()
 
         fact_budget = []

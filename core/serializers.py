@@ -56,16 +56,20 @@ class TransactionSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(
         default=serializers.CurrentUserDefault(),
     )
-
     category_name = serializers.StringRelatedField(
         many=False,
         source='category',
         read_only=True,
     )
+    bill_name = serializers.StringRelatedField(
+        many=False,
+        source='bill',
+        read_only=True,
+    )
 
     class Meta:
         model = Transaction
-        fields = ('id', 'bill', 'category', 'category_name', 'sum', 'date', 'tag', 'comment', 'user')
+        fields = ('id', 'bill', 'bill_name', 'category', 'category_name', 'sum', 'date', 'tag', 'comment', 'user')
 
 
 class PlannedBudgetSerializer(serializers.ModelSerializer):
