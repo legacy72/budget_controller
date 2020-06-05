@@ -94,6 +94,31 @@ class ActivateUserView(viewsets.ViewSet):
         return Response({'message': 'Пользователь успешно активирован'})
 
 
+class ResendCodeView(viewsets.ViewSet):
+    """
+    Вьюшка для повторной отправки кода на почту пользователя
+
+    :param request: username - логин пользователя (равен почте)
+    :return:
+    """
+    def create(self, request):
+        data = request.data
+        try:
+            user = User.objects.get(username=data.get('username'))
+        except User.DoesNotExist:
+            return Response({'error': 'Пользователь с данным логином не найден'})
+
+        auth_code, created = AuthCode.objects.get_or_create(user=user)
+        # генерация кода
+        code = generate_auth_code()
+        # отправка кода подтверждения
+        send_code(mail=data.get('username'), code=code)
+        auth_code.code = code
+        auth_code.save()
+
+        return Response({'message': 'Код успешно отправлен'})
+
+
 class BillViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a счетов текущего пользователя

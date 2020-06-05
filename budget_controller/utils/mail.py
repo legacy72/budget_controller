@@ -21,7 +21,7 @@ def send_code(mail, code):
     :return:
     """
     subject = 'Регистрация в приложении Budget Keeper'
-    message = ' Спасибо за регистрацию. Ваш код: {}'.format(code)
+    message = ' Спасибо за регистрацию. Ваш код подтверждения: {}'.format(code)
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [mail]
     send_mail(subject, message, email_from, recipient_list)

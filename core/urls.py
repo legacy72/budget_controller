@@ -19,3 +19,5 @@ router.register('balance', BalanceViewSet, basename='balance')
 router.register('budget', BudgetViewSet, basename='budget')
 # Активация пользователя по коду
 router.register('activate_user', ActivateUserView, basename='activate_user')
+# Повторная отправка кода на почту
+router.register('resend_code', ResendCodeView, basename='resend_code')
