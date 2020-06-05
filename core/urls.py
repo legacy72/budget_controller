@@ -17,3 +17,5 @@ router.register('planned_budget', PlannedBudgetViewSet, basename='planned_budget
 router.register('balance', BalanceViewSet, basename='balance')
 # Бюджет (доход/расход)
 router.register('budget', BudgetViewSet, basename='budget')
+# Активация пользователя по коду
+router.register('activate_user', ActivateUserView, basename='activate_user')

@@ -1,16 +1,19 @@
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import status
 from rest_framework import filters
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from django.utils import timezone
 from url_filter.integrations.drf import DjangoFilterBackend
 
-from .serializers import *
 from .models import (
-    Bill, Category, Transaction, PlannedBudget
+    User, Bill, Category, Transaction, PlannedBudget, AuthCode
 )
+from .serializers import (
+    UserSerializer, BillSerializer, CategorySerializer, TransactionSerializer, PlannedBudgetSerializer
+)
+from budget_controller.utils.mail import send_code, generate_auth_code
 
 
 @api_view(['POST'])
@@ -18,15 +21,16 @@ def registration_view(request):
     """
     Вьюшка для создания пользователя
     По умолчанию пользователю создается нулевой бюджет для каждой категории
+    Пользователь при создании является неактивным пока не применит код из сообщения на почте
 
-    :param request: username - логин
     :param request: email - почта
     :param request: password - пароль
     :param request: repeat_password - повторный пароль для подтверждения
-    :return:
+    :return: {
+        "email": почта созданного пользователя
+    }
     """
     # {
-    # "username": "test",
     # "email": "test@mail.ru",
     # "password": "test",
     # "repeat_password ": "test"
@@ -35,7 +39,19 @@ def registration_view(request):
         serializer = UserSerializer(data=request.data)
         data = {}
         if serializer.is_valid():
+            # создание пользователя (неактивным)
+            old_user = User.objects.filter(email=serializer.data['email'])
+            if old_user:
+                return Response({'error': 'Пользователь с таким email уже существует'})
             user = serializer.save()
+            # генерация кода
+            code = generate_auth_code()
+            # отправка кода подтверждения
+            send_code(mail=serializer.data['email'], code=code)
+            # добавлени кода в базу
+            auth_code = AuthCode(user=user, code=code)
+            auth_code.save()
+            # создание нулевого бюджета по каждой основной категории
             categories = Category.objects.filter(user__isnull=True).all()
             for category in categories:
                 planned_budget = PlannedBudget(
@@ -44,10 +60,38 @@ def registration_view(request):
                     sum=0,
                 )
                 planned_budget.save()
-            data['response'] = 'Пользователь успешно зарегистрирован'
+            data = serializer.data
         else:
             data = serializer.errors
         return Response(data)
+
+
+class ActivateUserView(viewsets.ViewSet):
+    """
+    Вьюшка для активации пользователя
+
+    :param request: code - код активации из сообщения на почте
+    :param request: username - логин пользователя (равен почте)
+    :return:
+    """
+    def create(self, request):
+        data = request.data
+        try:
+            user = User.objects.get(username=data.get('username'))
+        except User.DoesNotExist:
+            return Response({'error': 'Пользователь с данным логином не найден'})
+        auth_code = AuthCode.objects.filter(
+            user=user,
+            code=data.get('code'),
+            end_date__gte=timezone.now(),
+        ).all()
+        if not auth_code:
+            return Response({
+                'error': 'Код истек или введен неверно'
+            })
+        user.is_active = True
+        user.save()
+        return Response({'message': 'Пользователь успешно активирован'})
 
 
 class BillViewSet(viewsets.ModelViewSet):

@@ -41,3 +41,9 @@ class TransactionAdmin(admin.ModelAdmin):
         return obj.category.operation_type.get_name_display()
 
     get_operation_type.short_description = 'Планируемый бюджет'
+
+
+@admin.register(AuthCode)
+class AuthCodeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'code', 'start_date', 'end_date', )
+    list_filter = ('user', 'code', 'start_date', 'end_date', )
