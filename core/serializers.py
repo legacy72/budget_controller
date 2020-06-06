@@ -35,7 +35,7 @@ class BillSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bill
-        fields = ('id', 'user', 'name', 'sum', 'created_date')
+        fields = ('id', 'user', 'name', 'type', 'sum', 'created_date')
 
 
 class CategorySerializer(serializers.ModelSerializer):

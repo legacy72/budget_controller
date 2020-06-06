@@ -127,7 +127,7 @@ class BillViewSet(viewsets.ModelViewSet):
     """
     serializer_class = BillSerializer
     filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
-    filter_fields = ['id', 'user', 'name', 'sum', 'created_date']
+    filter_fields = ['id', 'user', 'name', 'type', 'sum', 'created_date']
 
     def get_queryset(self):
         user = self.request.user.id

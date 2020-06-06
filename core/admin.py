@@ -5,7 +5,7 @@ from .models import *
 
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'sum', 'created_date', )
+    list_display = ('user', 'name', 'type', 'sum', 'created_date', )
     list_filter = ('user', )
 
 

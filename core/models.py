@@ -24,6 +24,11 @@ class Bill(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     name = models.CharField(verbose_name='Название', max_length=255)
+    TYPE_CHOICES = (
+        ('cash', 'наличные'),
+        ('non_cash', 'безналичные'),
+    )
+    type = models.CharField(verbose_name='Название', max_length=50, choices=TYPE_CHOICES, default='cash')
     sum = models.DecimalField(verbose_name='Сумма', max_digits=30, decimal_places=2)
     created_date = models.DateTimeField(verbose_name='Дата создания', default=now_local)
 
