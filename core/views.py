@@ -284,6 +284,7 @@ class BalanceViewSet(viewsets.ViewSet):
     fact - фактически было заработано/потрачено
     balance - остаток (если отрицательный у категории дохода, то значит перерасход, если у прибыли - то заработано
                        больше чем планировалось)
+    date - дата (берем отсюда месяц и год)
     """
     def list(self, request):
         user = self.request.user.id
@@ -313,6 +314,7 @@ class BalanceViewSet(viewsets.ViewSet):
                 'planed': planned_budget_by_category.sum,  # сколько планируется заработать/потратить
                 'fact': 0,  # сколько по факту заработал/потратил
                 'balance': planned_budget_by_category.sum,  # сколько осталось заработать/потратить
+                'date': planned_budget_by_category.date,
             }
 
             for tranz in transactions_by_category:
