@@ -1,3 +1,5 @@
+from collections import Counter
+
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
@@ -366,3 +368,20 @@ class BudgetViewSet(viewsets.ViewSet):
         budget['money_to_spend'] = budget['fact_saving_money'] - budget['plan_saving_money']
 
         return Response(budget)
+
+
+class MostUsedBill(viewsets.ReadOnlyModelViewSet):
+    """
+    Вьюшка для получения наиболее часто используемого счета
+    """
+    serializer_class = BillSerializer
+
+    def get_queryset(self):
+        user = self.request.user.id
+        transactions = Transaction.objects.filter(user=user).all()
+        bills = [transaction.bill for transaction in transactions]
+        counter = Counter(bills)
+        bill = counter.most_common(1)
+        if not bill:
+            return []
+        return [bill[0][0]]
