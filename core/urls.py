@@ -21,3 +21,5 @@ router.register('budget', BudgetViewSet, basename='budget')
 router.register('activate_user', ActivateUserView, basename='activate_user')
 # Повторная отправка кода на почту
 router.register('resend_code', ResendCodeView, basename='resend_code')
+# Наиболее часто используемый счет
+router.register('most_used_bill', MostUsedBill, basename='most_used_bill')
