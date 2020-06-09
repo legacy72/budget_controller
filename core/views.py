@@ -328,7 +328,10 @@ class BalanceViewSet(viewsets.ViewSet):
 
 class BudgetViewSet(viewsets.ViewSet):
     """
-    Вьюшка для просмотра всего бюджета в текущем месяце
+    Вьюшка для просмотра всего бюджета за выбранную дату (месяц и год)
+
+    :param request: month - месяц в формате числа (1, 2, 3, ...) (если не передан, то берется текущий месяц)
+    :param request: year - год в формате числа (2019, 2020, ...) (если не передан, то берется текущий год)
 
     plan_income - планируемый доход
     fact_income - фактический дохо
@@ -340,14 +343,18 @@ class BudgetViewSet(viewsets.ViewSet):
     """
     def list(self, request):
         user = self.request.user.id
+        month = self.request.query_params.get('month', timezone.now().month)
+        year = self.request.query_params.get('year', timezone.now().year)
+
         transactions = Transaction.objects.filter(
             user=user,
-            date__year=timezone.now().year,
-            date__month=timezone.now().month,
+            date__month=month,
+            date__year=year,
         ).all()
         planned_budgets = PlannedBudget.objects.filter(
             user=user,
-            date__month__gte=timezone.now().month,
+            date__month=month,
+            date__year=year,
         ).all()
 
         budget = {
