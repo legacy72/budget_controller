@@ -394,3 +394,51 @@ class MostUsedBill(viewsets.ReadOnlyModelViewSet):
         if not bill:
             return []
         return [bill[0][0]]
+
+
+class BillAnalytic(viewsets.ViewSet):
+    """
+    Вьюшка для просмотра аналитики по счетам
+
+    Где не указан bill, там относится к сумме по всем счетам вместе взятым
+
+    bill - id счета
+    bill_name - название счета
+    income - сколько заработано по счету
+    expense - сколько потрачено по счету
+    balance - баланс (остаток)
+    """
+
+    def list(self, request):
+        user = self.request.user.id
+        bills = Bill.objects.filter(user=user)
+
+        bills_analytic = []
+        all_bills_analytics = {
+            'income': 0,
+            'expense': 0,
+            'balance': 0,
+        }
+        for bill in bills:
+            bill_analytic = {
+                'bill': bill.id,
+                'bill_name': bill.name,
+                'income': 0,
+                'expense': 0,
+                'balance': bill.sum,
+            }
+            transactions = Transaction.objects.filter(
+                user=user,
+                bill=bill,
+            )
+            for transaction in transactions:
+                if transaction.category.operation_type.name == 'income':
+                    bill_analytic['income'] += transaction.sum
+                    all_bills_analytics['income'] += transaction.sum
+                if transaction.category.operation_type.name == 'expense':
+                    bill_analytic['expense'] -= transaction.sum
+                    all_bills_analytics['expense'] -= transaction.sum
+            bills_analytic.append(bill_analytic)
+        all_bills_analytics['balance'] = all_bills_analytics['income'] - all_bills_analytics['expense']
+        bills_analytic.append(all_bills_analytics)
+        return Response(bills_analytic)
