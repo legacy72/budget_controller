@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.timezone import now as now_local
 
-from budget_controller.utils.date_utils import increase_datetime_now
+from budget_controller.utils.date_utils import increase_datetime_now_for_10_minutes
 
 
 class AuthCode(models.Model):
@@ -11,7 +11,7 @@ class AuthCode(models.Model):
     start_date = models.DateTimeField(verbose_name='Дата генерации', auto_now=True)
     end_date = models.DateTimeField(
         verbose_name='Дата окончания действия',
-        default=increase_datetime_now(minutes=10),
+        default=increase_datetime_now_for_10_minutes,
     )
 
     class Meta:
