@@ -116,6 +116,7 @@ class ResendCodeView(viewsets.ViewSet):
         # отправка кода подтверждения
         send_code(mail=data.get('username'), code=code)
         auth_code.code = code
+        auth_code.end_date = timezone.now() + timezone.timedelta(minutes=10)
         auth_code.save()
 
         return Response({'message': 'Код успешно отправлен'})

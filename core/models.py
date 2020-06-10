@@ -1,9 +1,7 @@
-from datetime import timedelta
-
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils.timezone import now as now_local
 from django.utils import timezone
+from django.utils.timezone import now as now_local
 
 
 class AuthCode(models.Model):
@@ -12,7 +10,7 @@ class AuthCode(models.Model):
     start_date = models.DateTimeField(verbose_name='Дата генерации', auto_now=True)
     end_date = models.DateTimeField(
         verbose_name='Дата окончания действия',
-        default=timezone.now() + timedelta(minutes=10)  # TODO: чек, чтобы таймзоны все работали
+        default=timezone.now() + timezone.timedelta(minutes=10)  # TODO: чек, чтобы таймзоны все работали
     )
 
     class Meta:
