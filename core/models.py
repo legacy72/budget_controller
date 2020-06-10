@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.utils.timezone import now as now_local
+
+from budget_controller.utils.date_utils import increase_datetime_now
 
 
 class AuthCode(models.Model):
@@ -10,7 +11,7 @@ class AuthCode(models.Model):
     start_date = models.DateTimeField(verbose_name='Дата генерации', auto_now=True)
     end_date = models.DateTimeField(
         verbose_name='Дата окончания действия',
-        default=timezone.now() + timezone.timedelta(minutes=10)  # TODO: чек, чтобы таймзоны все работали
+        default=increase_datetime_now(minutes=10),
     )
 
     class Meta:
