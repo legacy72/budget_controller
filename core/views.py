@@ -191,6 +191,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         user = self.request.user.id
         queryset = Transaction.objects\
             .filter(user=user, bill__user=user)\
+            .order_by('date')\
             .all()
         return queryset
 
@@ -363,6 +364,7 @@ class BudgetViewSet(viewsets.ViewSet):
     plan_saving_money - сколько было запланировано сохранить средств
     fact_saving_money - сколько фактически получилось сохранить средств
     money_to_spend - остаток, сколько можно ещё потратить (если число отрициальное, значит вышел за пределы бюджета)
+    date - дата
     """
     def list(self, request):
         user = self.request.user.id
@@ -388,6 +390,7 @@ class BudgetViewSet(viewsets.ViewSet):
             'plan_saving_money': 0,
             'fact_saving_money': 0,
             'money_to_spend': 0,
+            'date': planned_budgets[0].date if planned_budgets else None,
         }
         for transaction in transactions:
             if transaction.category.operation_type.name == 'income':
@@ -400,6 +403,61 @@ class BudgetViewSet(viewsets.ViewSet):
         budget['money_to_spend'] = budget['fact_saving_money'] - budget['plan_saving_money']
 
         return Response(budget)
+
+
+class StatisticViewSet(viewsets.ViewSet):
+    """
+    Вьюшка для просмотра cтатистики доходов/расходов за определенный диапазон
+
+    :param request: start_date - начальная дата в формате %Y-%m-%d (день нужно указывать 1)
+    :param request: end_date - конечная дата в формате %Y-%m-%d (день нужно указывать последний в текущем месяце)
+                               (если не передана, то берется текущая)
+
+    income - доход
+    expense - расход
+    month - месяц
+    year - год
+    """
+    def list(self, request):
+        user = self.request.user.id
+        start_date_param = self.request.query_params.get('start_date')
+        end_date_param = self.request.query_params.get('end_date')
+
+        start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d") if start_date_param else timezone.now()
+        end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d") if end_date_param else timezone.now()
+
+        statistic = []
+
+        transactions = Transaction.objects\
+            .filter(
+                user=user,
+                date__range=(start_date, end_date),
+            ).order_by('date').all()
+        month_statistic = {
+            'income': 0,
+            'expense': 0,
+            'month': int(start_date.month),
+            'year': int(start_date.year),
+        }
+        for transaction in transactions:
+            # если новый месяц наступил в списке транзакций, то создаем новый словарь на следующий месяц, а этот месяц
+            # записываем в массив
+            if transaction.date.month != month_statistic['month'] or transaction.date.year != month_statistic['year']:
+                if month_statistic['income'] != 0 or month_statistic['expense'] != 0:
+                    statistic.append(month_statistic)
+                month_statistic = {
+                    'income': 0,
+                    'expense': 0,
+                    'month': transaction.date.month,
+                    'year': transaction.date.year,
+                }
+            if transaction.category.operation_type.name == 'income':
+                month_statistic['income'] += transaction.sum
+            if transaction.category.operation_type.name == 'expense':
+                month_statistic['expense'] += transaction.sum
+        # последний месяц тоже записываем в массив
+        statistic.append(month_statistic)
+        return Response(statistic)
 
 
 class MostUsedBill(viewsets.ReadOnlyModelViewSet):

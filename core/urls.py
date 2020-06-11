@@ -17,6 +17,8 @@ router.register('planned_budget', PlannedBudgetViewSet, basename='planned_budget
 router.register('balance', BalanceViewSet, basename='balance')
 # Бюджет (доход/расход)
 router.register('budget', BudgetViewSet, basename='budget')
+# Статистика (доход/расход)
+router.register('statistic', StatisticViewSet, basename='statistic')
 # Активация пользователя по коду
 router.register('activate_user', ActivateUserView, basename='activate_user')
 # Повторная отправка кода на почту
