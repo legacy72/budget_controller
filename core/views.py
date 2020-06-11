@@ -158,6 +158,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
             .all()
         return queryset
 
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        category = serializer.save()
+        # при создании новой категории добавляем по умолчанию ей нулевой бюджет текущего месяца
+        planned_budget = PlannedBudget(
+            user=data['user'],
+            category=category,
+            sum=0,
+        )
+        planned_budget.save()
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     """
@@ -440,6 +451,7 @@ class BillAnalytic(viewsets.ViewSet):
                     bill_analytic['expense'] -= transaction.sum
                     all_bills_analytics['expense'] -= transaction.sum
             bills_analytic.append(bill_analytic)
+        # баланс по всем счетам вместе взятым
         all_bills_analytics['balance'] = all_bills_analytics['income'] - all_bills_analytics['expense']
         bills_analytic.append(all_bills_analytics)
         return Response(bills_analytic)
