@@ -143,7 +143,7 @@ class BillViewSet(viewsets.ModelViewSet):
         user = self.request.user.id
         queryset = Bill.objects\
             .filter(user=user)\
-            .all()
+            .prefetch_related('user')
         return queryset
 
 
@@ -161,8 +161,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user.id
         queryset = Category.objects\
-            .filter(Q(user=user) | Q(user__isnull=True))\
-            .all()
+            .select_related('operation_type')\
+            .filter(Q(user=user) | Q(user__isnull=True))
         return queryset
 
     def perform_create(self, serializer):
@@ -190,9 +190,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user.id
         queryset = Transaction.objects\
+            .select_related('bill', 'category')\
             .filter(user=user, bill__user=user)\
-            .order_by('date')\
-            .all()
+            .order_by('date')
         return queryset
 
     def create(self, request):
@@ -256,7 +256,7 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
                 user=user,
                 date__month=month,
                 date__year=year,
-            ).all()
+            )
         return queryset
 
     def create(self, request):
@@ -319,7 +319,7 @@ class BalanceViewSet(viewsets.ViewSet):
             user=user,
             date__month=month,
             date__year=year,
-        ).all()
+        ).select_related('category', 'category__operation_type')
 
         fact_budget = []
         for planned_budget_by_category in planned_budget:
@@ -328,7 +328,7 @@ class BalanceViewSet(viewsets.ViewSet):
                 date__month=timezone.now().month,
                 date__year=timezone.now().year,
                 category_id=planned_budget_by_category.category_id,
-            ).all()
+            ).select_related('bill', 'category', 'category__operation_type')
 
             fact_budget_by_category = {
                 'category': planned_budget_by_category.category.id,
@@ -375,12 +375,12 @@ class BudgetViewSet(viewsets.ViewSet):
             user=user,
             date__month=month,
             date__year=year,
-        ).all()
+        ).select_related('bill', 'category', 'category__operation_type')
         planned_budgets = PlannedBudget.objects.filter(
             user=user,
             date__month=month,
             date__year=year,
-        ).all()
+        ).select_related('category', 'category__operation_type')
 
         budget = {
             'plan_income': sum(p.sum for p in planned_budgets if p.category.operation_type.name == 'income'),
@@ -438,7 +438,9 @@ class StatisticViewSet(viewsets.ViewSet):
             .filter(
                 user=user,
                 date__range=(start_date, end_date),
-            ).order_by('date').all()
+            )\
+            .select_related('bill', 'category', 'category__operation_type')\
+            .order_by('date')
         month_statistic = {
             'income': 0,
             'expense': 0,
@@ -474,7 +476,9 @@ class MostUsedBill(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user.id
-        transactions = Transaction.objects.filter(user=user).all()
+        transactions = Transaction.objects\
+            .filter(user=user)\
+            .select_related('bill', 'category', 'category__operation_type')
         bills = [transaction.bill for transaction in transactions]
         counter = Counter(bills)
         bill = counter.most_common(1)
@@ -498,7 +502,9 @@ class BillAnalytic(viewsets.ViewSet):
 
     def list(self, request):
         user = self.request.user.id
-        bills = Bill.objects.filter(user=user)
+        bills = Bill.objects\
+            .filter(user=user)\
+            .prefetch_related('user')
 
         bills_analytic = []
         all_bills_analytics = {
@@ -517,7 +523,7 @@ class BillAnalytic(viewsets.ViewSet):
             transactions = Transaction.objects.filter(
                 user=user,
                 bill=bill,
-            )
+            ).select_related('bill', 'category', 'category__operation_type')
             for transaction in transactions:
                 if transaction.category.operation_type.name == 'income':
                     bill_analytic['income'] += transaction.sum

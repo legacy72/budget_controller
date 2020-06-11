@@ -17,6 +17,7 @@ class AuthCode(models.Model):
     class Meta:
         verbose_name = 'Код'
         verbose_name_plural = 'Коды'
+        ordering = ['-id']
 
 
 class Bill(models.Model):
@@ -34,6 +35,7 @@ class Bill(models.Model):
     class Meta:
         verbose_name = 'Счет'
         verbose_name_plural = 'Счета'
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -49,6 +51,7 @@ class OperationType(models.Model):
     class Meta:
         verbose_name = 'Вид операции'
         verbose_name_plural = 'Виды операции'
+        ordering = ['-id']
 
     def __str__(self):
         return self.get_name_display()
@@ -62,6 +65,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
@@ -80,6 +84,7 @@ class Transaction(models.Model):
     class Meta:
         verbose_name = 'Операция'
         verbose_name_plural = 'Операции'
+        ordering = ['-date']
 
 
 class PlannedBudget(models.Model):
@@ -92,3 +97,4 @@ class PlannedBudget(models.Model):
     class Meta:
         verbose_name = 'Планируемый бюджет'
         verbose_name_plural = 'Планируемые бюджеты'
+        ordering = ['-id']
