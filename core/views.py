@@ -44,7 +44,7 @@ def registration_view(request):
             # создание пользователя (неактивным)
             old_user = User.objects.filter(email=serializer.data['email'])
             if old_user:
-                return Response({'error': 'Пользователь с таким email уже существует'})
+                return Response({'Error': 'Пользователь с таким email уже существует'})
             user = serializer.save()
             # генерация кода
             code = generate_auth_code()
@@ -81,16 +81,20 @@ class ActivateUserView(viewsets.ViewSet):
         try:
             user = User.objects.get(username=data.get('username'))
         except User.DoesNotExist:
-            return Response({'error': 'Пользователь с данным логином не найден'})
+            return Response(
+                {'Error': 'Пользователь с данным логином не найден'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         auth_code = AuthCode.objects.filter(
             user=user,
             code=data.get('code'),
             end_date__gte=timezone.now(),
         ).all()
         if not auth_code:
-            return Response({
-                'error': 'Код истек или введен неверно'
-            })
+            return Response(
+                {'Error': 'Код истек или введен неверно'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user.is_active = True
         user.save()
         return Response({'message': 'Пользователь успешно активирован'})
@@ -108,7 +112,10 @@ class ResendCodeView(viewsets.ViewSet):
         try:
             user = User.objects.get(username=data.get('username'))
         except User.DoesNotExist:
-            return Response({'error': 'Пользователь с данным логином не найден'})
+            return Response(
+                {'Error': 'Пользователь с данным логином не найден'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         auth_code, created = AuthCode.objects.get_or_create(user=user)
         # генерация кода
@@ -199,12 +206,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         if category_user and category_user != user:
             return Response(
-                {'Error': 'У Вас нет такой категории'}, status=status.HTTP_400_BAD_REQUEST
+                {'Error': 'У Вас нет такой категории'},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         if self.request.user != bill.user:
             return Response(
-                {'Error': 'У Вас нет такого счета'}, status=status.HTTP_400_BAD_REQUEST
+                {'Error': 'У Вас нет такого счета'},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         operation_type = data['category'].operation_type.name
@@ -259,7 +268,8 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
         user = data['user']
         if category_user and category_user != user:
             return Response(
-                {'Error': 'У Вас нет такой категории'}, status=status.HTTP_400_BAD_REQUEST
+                {'Error': 'У Вас нет такой категории'},
+                status=status.HTTP_400_BAD_REQUEST
             )
         planned_budget = PlannedBudget.objects \
             .select_related('category') \
@@ -271,7 +281,8 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
             ).all()
         if planned_budget:
             return Response(
-                {'Error': 'На текущий месяц уже создана данная категория'}, status=status.HTTP_400_BAD_REQUEST
+                {'Error': 'На текущий месяц уже создана данная категория'},
+                status=status.HTTP_400_BAD_REQUEST
             )
         serializer.save()
         headers = self.get_success_headers(serializer.data)
