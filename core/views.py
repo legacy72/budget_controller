@@ -459,8 +459,8 @@ class BillAnalytic(viewsets.ViewSet):
                     bill_analytic['income'] += transaction.sum
                     all_bills_analytics['income'] += transaction.sum
                 if transaction.category.operation_type.name == 'expense':
-                    bill_analytic['expense'] -= transaction.sum
-                    all_bills_analytics['expense'] -= transaction.sum
+                    bill_analytic['expense'] += transaction.sum
+                    all_bills_analytics['expense'] += transaction.sum
             bills_analytic.append(bill_analytic)
         # баланс по всем счетам вместе взятым
         all_bills_analytics['balance'] = all_bills_analytics['income'] - all_bills_analytics['expense']
