@@ -423,7 +423,13 @@ class StatisticViewSet(viewsets.ViewSet):
         start_date_param = self.request.query_params.get('start_date')
         end_date_param = self.request.query_params.get('end_date')
 
-        start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d") if start_date_param else timezone.now()
+        if not start_date_param:
+            return Response(
+                {'Error': 'Не указана начальная дата'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d")
         end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d") if end_date_param else timezone.now()
 
         statistic = []
