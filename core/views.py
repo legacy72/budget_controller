@@ -508,9 +508,9 @@ class BillAnalytic(viewsets.ViewSet):
 
         bills_analytic = []
         all_bills_analytics = {
-            'income': 0,
-            'expense': 0,
-            'balance': 0,
+            'all_income': 0,
+            'all_expense': 0,
+            'all_balance': 0,
         }
         for bill in bills:
             bill_analytic = {
@@ -527,12 +527,12 @@ class BillAnalytic(viewsets.ViewSet):
             for transaction in transactions:
                 if transaction.category.operation_type.name == 'income':
                     bill_analytic['income'] += transaction.sum
-                    all_bills_analytics['income'] += transaction.sum
+                    all_bills_analytics['all_income'] += transaction.sum
                 if transaction.category.operation_type.name == 'expense':
                     bill_analytic['expense'] += transaction.sum
-                    all_bills_analytics['expense'] += transaction.sum
+                    all_bills_analytics['all_expense'] += transaction.sum
             bills_analytic.append(bill_analytic)
         # баланс по всем счетам вместе взятым
-        all_bills_analytics['balance'] = all_bills_analytics['income'] - all_bills_analytics['expense']
+        all_bills_analytics['all_balance'] = all_bills_analytics['all_income'] - all_bills_analytics['all_expense']
         bills_analytic.append(all_bills_analytics)
         return Response(bills_analytic)
