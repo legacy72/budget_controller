@@ -136,3 +136,6 @@ dmypy.json
 
 # .environment variables
 .environment
+
+# static
+/static
