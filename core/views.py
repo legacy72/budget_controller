@@ -190,7 +190,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user.id
         queryset = Transaction.objects\
-            .select_related('bill', 'category')\
+            .select_related('bill', 'category', 'category__operation_type')\
             .filter(user=user, bill__user=user)\
             .order_by('date')
         return queryset

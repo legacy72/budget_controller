@@ -68,9 +68,19 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    operation_type = serializers.SerializerMethodField(method_name='get_operation_type')
+    operation_type_name = serializers.SerializerMethodField(method_name='get_operation_type_name')
+
     class Meta:
         model = Transaction
-        fields = ('id', 'bill', 'bill_name', 'category', 'category_name', 'sum', 'date', 'tag', 'comment', 'user')
+        fields = ('id', 'bill', 'bill_name', 'category', 'category_name', 'operation_type', 'operation_type_name',
+                  'sum', 'date', 'tag', 'comment', 'user')
+
+    def get_operation_type(self, obj):
+        return obj.category.operation_type.id
+
+    def get_operation_type_name(self, obj):
+        return obj.category.operation_type.name
 
 
 class PlannedBudgetSerializer(serializers.ModelSerializer):
