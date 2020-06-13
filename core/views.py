@@ -468,7 +468,7 @@ class StatisticViewSet(viewsets.ViewSet):
         return Response(statistic)
 
 
-class MostUsedBill(viewsets.ReadOnlyModelViewSet):
+class MostUsedBillViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Вьюшка для получения наиболее часто используемого счета
     """
@@ -487,17 +487,21 @@ class MostUsedBill(viewsets.ReadOnlyModelViewSet):
         return [bill[0][0]]
 
 
-class BillAnalytic(viewsets.ViewSet):
+class BillAnalyticViewSet(viewsets.ViewSet):
     """
     Вьюшка для просмотра аналитики по счетам
 
-    Где не указан bill, там относится к сумме по всем счетам вместе взятым
+    Последний объект в массиве относится к сумме по всем счетам вместе взятым
 
     bill - id счета
     bill_name - название счета
     income - сколько заработано по счету
     expense - сколько потрачено по счету
     balance - баланс (остаток)
+
+    all_income - сколько всего заработано по счету
+    all_expense - сколько всего потрачено по счету
+    all_balance - весь баланс (остаток)
     """
 
     def list(self, request):
@@ -536,3 +540,54 @@ class BillAnalytic(viewsets.ViewSet):
         all_bills_analytics['all_balance'] = all_bills_analytics['all_income'] - all_bills_analytics['all_expense']
         bills_analytic.append(all_bills_analytics)
         return Response(bills_analytic)
+
+
+class FreeMoneyViewSet(viewsets.ViewSet):
+    """
+    Вьюшка для просмотра свободных денег на текущий день/неделю/месяц
+
+    free_money_for_day - свободные деньги на день
+    free_money_for_week - свободные деньги на неделю
+    free_money_for_month - свободные деньги на месяц
+    """
+    def list(self, request):
+        user = self.request.user.id
+        month = timezone.now().month
+        year = timezone.now().year
+
+        transactions = Transaction.objects.filter(
+            user=user,
+            date__month=month,
+            date__year=year,
+        ).select_related('bill', 'category', 'category__operation_type')
+        planned_budgets = PlannedBudget.objects.filter(
+            user=user,
+            date__month=month,
+            date__year=year,
+        ).select_related('category', 'category__operation_type')
+
+        budget = {
+            'free_money_for_day': 0,
+            'free_money_for_week': 0,
+            'free_money_for_month': 0,
+        }
+
+        plan_income = sum(p.sum for p in planned_budgets if p.category.operation_type.name == 'income')
+        fact_income = 0
+        plan_expense = sum(p.sum for p in planned_budgets if p.category.operation_type.name == 'expense')
+        fact_expense = 0
+        
+        for transaction in transactions:
+            if transaction.category.operation_type.name == 'income':
+                fact_income += transaction.sum
+            if transaction.category.operation_type.name == 'expense':
+                fact_expense += transaction.sum
+
+        fact_saving_money = fact_income - fact_expense
+        plan_saving_money = plan_income - plan_expense
+
+        budget['free_money_for_day'] = (fact_saving_money - plan_saving_money) // 30  # TODO: добавить норм формулу
+        budget['free_money_for_week'] = (fact_saving_money - plan_saving_money) // 4  # TODO: добавить норм формулу
+        budget['free_money_for_month'] = fact_saving_money - plan_saving_money
+
+        return Response(budget)
