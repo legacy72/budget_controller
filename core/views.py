@@ -33,9 +33,9 @@ def registration_view(request):
     }
     """
     # {
-    # "email": "test@mail.ru",
-    # "password": "test",
-    # "repeat_password ": "test"
+    #     "email": "test@mail.ru",
+    #     "password": "test",
+    #     "repeat_password": "test"
     # }
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
