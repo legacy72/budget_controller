@@ -12,7 +12,7 @@ from url_filter.integrations.drf import DjangoFilterBackend
 from core.models import (
     User, Bill, Category, Transaction, PlannedBudget, AuthCode
 )
-from budget_controller.utils.money import round_money
+from budget_controller.utils.money import round_digit
 
 
 class ReduceExpenseViewSet(viewsets.ViewSet):
@@ -26,9 +26,17 @@ class ReduceExpenseViewSet(viewsets.ViewSet):
 
 class AverageDeviationViewSet(viewsets.ViewSet):
     """
-    Mock
-    """
+    Вьюшка для уведомлений, которые показывают процент отклонения от средних расходов и средних заработков
+    P.S. Для полей income_deviation_percentage и expense_deviation_percentage работает правило - если число
+    положительное, то отклонение в плюс, если отрицательное - то в минус
 
+    average_income - средний расход
+    average_expense - средний доход
+    current_income - текущий доход
+    current_expense - текущий расход
+    income_deviation_percentage - процент отклонения от среднего дохода
+    expense_deviation_percentage - процент отклонения от среднего расхода
+    """
     def list(self, request):
         # TODO: в данной реализации не учитываются месяцы, в которых не было совершенно тарнзакций (возможно стоит)
         user = self.request.user.id
@@ -73,9 +81,16 @@ class AverageDeviationViewSet(viewsets.ViewSet):
         statistic.append(month_statistic)
         count_months += 1
 
+        average_income = round_digit(income / count_months)
+        average_expense = round_digit(expense / count_months)
+
         average_deviation = {
-            'average_income': round_money(income / count_months),
-            'average_expense': round_money(expense / count_months),
+            'average_income': average_income,
+            'average_expense': average_expense,
+            'current_income': month_statistic['income'],
+            'current_expense': month_statistic['expense'],
+            'income_deviation_percentage': int(month_statistic['income'] * 100 / average_income) - 100,
+            'expense_deviation_percentage': int(month_statistic['expense'] * 100 / average_expense) - 100,
         }
 
         return Response(average_deviation)

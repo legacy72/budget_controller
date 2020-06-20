@@ -74,8 +74,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ('id', 'bill', 'bill_name', 'bill_type', 'category', 'category_name', 'operation_type', 'operation_type_name',
-                  'sum', 'date', 'tag', 'comment', 'user')
+        fields = ('id', 'bill', 'bill_name', 'bill_type', 'category', 'category_name', 'operation_type',
+                  'operation_type_name', 'sum', 'date', 'tag', 'comment', 'user')
 
     def get_bill_type(self, obj):
         return obj.bill.type
