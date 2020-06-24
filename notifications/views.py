@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 
 from core.models import (
-    User, Bill, Category, Transaction, PlannedBudget
+    Transaction, PlannedBudget
 )
 from budget_controller.utils.money import round_digit
 
@@ -65,8 +65,8 @@ class ReduceExpenseViewSet(viewsets.ViewSet):
         average_expense = round_digit(expense / count_months)
 
         average_deviation = {
-            'need_reduce_costs': True if int(month_statistic['expense'] * 100 / average_expense) - 100 > 0 else False,
-            'expense_deviation_percentage': int(month_statistic['expense'] * 100 / average_expense) - 100,
+            'need_reduce_costs': True if int(100 - average_expense * 100 / month_statistic['expense']) > 0 else False,
+            'expense_deviation_percentage': int(100 - average_expense * 100 / month_statistic['expense']),
         }
 
         return Response(average_deviation)
@@ -137,8 +137,8 @@ class AverageDeviationViewSet(viewsets.ViewSet):
             'average_expense': average_expense,
             'current_income': month_statistic['income'],
             'current_expense': month_statistic['expense'],
-            'income_deviation_percentage': int(month_statistic['income'] * 100 / average_income) - 100,
-            'expense_deviation_percentage': int(month_statistic['expense'] * 100 / average_expense) - 100,
+            'income_deviation_percentage': 100 - average_income * 100 / month_statistic['income'],
+            'expense_deviation_percentage': 100 - average_expense * 100 / month_statistic['expense'],
         }
 
         return Response(average_deviation)
