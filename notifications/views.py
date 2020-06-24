@@ -137,8 +137,8 @@ class AverageDeviationViewSet(viewsets.ViewSet):
             'average_expense': average_expense,
             'current_income': month_statistic['income'],
             'current_expense': month_statistic['expense'],
-            'income_deviation_percentage': 100 - average_income * 100 / month_statistic['income'],
-            'expense_deviation_percentage': 100 - average_expense * 100 / month_statistic['expense'],
+            'income_deviation_percentage': round_digit(100 - average_income * 100 / month_statistic['income']),
+            'expense_deviation_percentage': round_digit(100 - average_expense * 100 / month_statistic['expense']),
         }
 
         return Response(average_deviation)
