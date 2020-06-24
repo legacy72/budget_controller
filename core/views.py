@@ -44,7 +44,10 @@ def registration_view(request):
             # создание пользователя (неактивным)
             old_user = User.objects.filter(email=serializer.data['email'])
             if old_user:
-                return Response({'Error': 'Пользователь с таким email уже существует'})
+                return Response(
+                    {'Error': 'Пользователь с таким email уже существует'},
+                    status=status.HTTP_409_CONFLICT
+                )
             user = serializer.save()
             # генерация кода
             code = generate_auth_code()
