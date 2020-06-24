@@ -1,3 +1,4 @@
+import calendar
 from collections import Counter
 
 from django.db.models import Q
@@ -589,8 +590,15 @@ class FreeMoneyViewSet(viewsets.ViewSet):
         fact_saving_money = fact_income - fact_expense
         plan_saving_money = plan_income - plan_expense
 
-        budget['free_money_for_day'] = (fact_saving_money - plan_saving_money) // 30  # TODO: добавить норм формулу
-        budget['free_money_for_week'] = (fact_saving_money - plan_saving_money) // 4  # TODO: добавить норм формулу
+        # дней до конца текущего месяца
+        days_for_end_month = calendar.monthrange(year, month)[1] - timezone.now().day
+        # если это последний день, то считаем, что остался ещё один день вместо 0
+        days_for_end_month = days_for_end_month if days_for_end_month else 1
+        # номер текущей недели
+        number_of_current_week = timezone.now().day // 7 + 1
+
+        budget['free_money_for_day'] = (fact_saving_money - plan_saving_money) // days_for_end_month
+        budget['free_money_for_week'] = (fact_saving_money - plan_saving_money) // 4 * number_of_current_week
         budget['free_money_for_month'] = fact_saving_money - plan_saving_money
 
         return Response(budget)
