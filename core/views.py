@@ -250,10 +250,27 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
     filter_fields = ['id', 'user', 'category', 'sum', 'date']
 
     def get_queryset(self):
-        user = self.request.user.id
+        user = self.request.user
         month = self.request.query_params.get('month', timezone.now().month)
         year = self.request.query_params.get('year', timezone.now().year)
 
+        # создание нулевого бюджета по каждой основной категории, если его ещё нет
+        categories = Category.objects.filter(user__isnull=True).all()
+        for category in categories:
+            planned_budget = PlannedBudget.objects.filter(
+                user=user,
+                category=category,
+                date__month=month,
+                date__year=year,
+            )
+            if not planned_budget:
+                planned_budget = PlannedBudget(
+                    user=user,
+                    category=category,
+                    sum=0,
+                )
+                planned_budget.save()
+        # получение всех планируемых бюджетов
         queryset = PlannedBudget.objects \
             .select_related('category') \
             .filter(
