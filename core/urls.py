@@ -13,6 +13,8 @@ router.register('categories', CategoryViewSet, basename='categories')
 router.register('transactions', TransactionViewSet, basename='transactions')
 # CRUD для бюджета
 router.register('planned_budget', PlannedBudgetViewSet, basename='planned_budget')
+# Обновление батча бюджетов
+router.register('edit_planned_budgets', EditPlannedBudgetsViewSet, basename='edit_planned_budgets')
 # Планирование бюджета по категориям
 router.register('balance', BalanceViewSet, basename='balance')
 # Бюджет (доход/расход)

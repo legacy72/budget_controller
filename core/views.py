@@ -239,6 +239,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class PlannedBudgetViewSet(viewsets.ModelViewSet):
     """
     Вьюшка для CRUD'a планируемого бюджета
+    Если по какой-то из стандартной категории нет бюджета, то создастся автоматически нулевой по ней
 
     P.S. Для создания день можно указывать любой, учитываться будет только месяц и год
 
@@ -312,6 +313,26 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
+
+
+class EditPlannedBudgetsViewSet(viewsets.ViewSet):
+    """
+    Обновление батча планируемых бюджетов POST запросом
+
+    :param request: Массив бюджетов с полями id и sum (новая сумма бюджета), которые нужно обновить
+    Пример: [{"id": 14, "sum": "100.00"}, {"id": 13, "sum": "101.00"}]
+    """
+
+    def create(self, request):
+        new_budgets = request.data
+        for new_budget in new_budgets:
+            try:
+                planned_budget = PlannedBudget.objects.get(id=new_budget['id'])
+            except PlannedBudget.DoesNotExist:
+                continue
+            planned_budget.sum = new_budget['sum']
+            planned_budget.save()
+        return Response({'message': 'Бюджеты обновлены'}, status=status.HTTP_200_OK)
 
 
 class BalanceViewSet(viewsets.ViewSet):
