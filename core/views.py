@@ -537,6 +537,7 @@ class BillAnalyticViewSet(viewsets.ViewSet):
 
     bill - id счета
     bill_name - название счета
+    type - тип счета (cash/non_cash)
     income - сколько заработано по счету
     expense - сколько потрачено по счету
     balance - баланс (остаток)
@@ -562,10 +563,10 @@ class BillAnalyticViewSet(viewsets.ViewSet):
             bill_analytic = {
                 'bill': bill.id,
                 'bill_name': bill.name,
+                'type': bill.type,
                 'income': 0,
                 'expense': 0,
                 'balance': bill.sum,
-                'type': bill.type,
             }
             transactions = Transaction.objects.filter(
                 user=user,
