@@ -565,6 +565,7 @@ class BillAnalyticViewSet(viewsets.ViewSet):
                 'income': 0,
                 'expense': 0,
                 'balance': bill.sum,
+                'type': bill.type,
             }
             transactions = Transaction.objects.filter(
                 user=user,
