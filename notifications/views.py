@@ -1,4 +1,5 @@
 from django.utils import timezone
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 
@@ -30,6 +31,13 @@ class ReduceExpenseViewSet(viewsets.ViewSet):
             )\
             .select_related('bill', 'category', 'category__operation_type')\
             .order_by('date')
+
+        if not transactions:
+            return Response(
+                {'Error': 'Пока не было совершено ни одной транзакции'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         month_statistic = {
             'income': 0,
             'expense': 0,
@@ -97,6 +105,13 @@ class AverageDeviationViewSet(viewsets.ViewSet):
             )\
             .select_related('bill', 'category', 'category__operation_type')\
             .order_by('date')
+
+        if not transactions:
+            return Response(
+                {'Error': 'Пока не было совершено ни одной транзакции'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         month_statistic = {
             'income': 0,
             'expense': 0,
