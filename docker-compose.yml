@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+ db:
+   image: postgres
+ web:
+   container_name: budget_controller
+   build: .
+   command: bash -c "python /code/manage.py collectstatic --noinput && python /code/manage.py migrate --noinput && gunicorn -c gunicorn.conf.py budget_controller.wsgi"
+   volumes:
+     - .:/code
+   env_file:
+     - .environment
+   ports:
+     - "8000:8000"
+   depends_on:
+     - db
