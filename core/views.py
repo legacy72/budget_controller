@@ -53,7 +53,10 @@ def registration_view(request):
             # генерация кода
             code = generate_auth_code()
             # отправка кода подтверждения
-            send_code(mail=serializer.data['email'], code=code)
+            resp = send_code(mail=serializer.data['email'], code=code)
+            if not resp['success']:
+                user.delete()
+                return Response({'message': 'Не удалось отправить код'})
             # добавлени кода в базу
             auth_code = AuthCode(user=user, code=code)
             auth_code.save()
@@ -125,7 +128,9 @@ class ResendCodeView(viewsets.ViewSet):
         # генерация кода
         code = generate_auth_code()
         # отправка кода подтверждения
-        send_code(mail=data.get('username'), code=code)
+        resp = send_code(mail=data.get('username'), code=code)
+        if not resp['success']:
+            return Response({'message': 'Не удалось отправить код'})
         auth_code.code = code
         auth_code.end_date = timezone.now() + timezone.timedelta(minutes=10)
         auth_code.save()
