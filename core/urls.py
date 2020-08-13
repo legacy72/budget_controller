@@ -25,6 +25,10 @@ router.register('statistic', StatisticViewSet, basename='statistic')
 router.register('activate_user', ActivateUserView, basename='activate_user')
 # Повторная отправка кода на почту
 router.register('resend_code', ResendCodeView, basename='resend_code')
+# Отправка кода восстановления пароля на почту пользователя
+router.register('send_restore_code', SendRestoreCodeView, basename='send_restore_code')
+# Восстановление пароля
+router.register('restore_password', RestorePasswordView, basename='restore_password')
 # Наиболее часто используемый счет
 router.register('most_used_bill', MostUsedBillViewSet, basename='most_used_bill')
 # Аналитика по счетам

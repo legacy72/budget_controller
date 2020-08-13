@@ -13,16 +13,15 @@ def generate_auth_code():
     return randint(10000, 99999)
 
 
-def send_code(mail, code):
+def send_code(subject, message, mail):
     """
     Отправка кода подтверждения на почту
 
+    :param subject: тема письма
+    :param message: текст письма
     :param mail: почта
-    :param code: код
     :return:
     """
-    subject = 'Регистрация в приложении Budget Keeper'
-    message = ' Спасибо за регистрацию. Ваш код подтверждения: {}'.format(code)
     email_from = settings.EMAIL_HOST_USER
     recipient_list = [mail]
     try:

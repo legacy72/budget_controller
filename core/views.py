@@ -40,7 +40,6 @@ def registration_view(request):
     # }
     if request.method == 'POST':
         serializer = UserSerializer(data=request.data)
-        data = {}
         if serializer.is_valid():
             # создание пользователя (неактивным)
             old_user = User.objects.filter(email=serializer.data['email'])
@@ -53,7 +52,11 @@ def registration_view(request):
             # генерация кода
             code = generate_auth_code()
             # отправка кода подтверждения
-            resp = send_code(mail=serializer.data['email'], code=code)
+            resp = send_code(
+                subject='Регистрация в приложении Budget Keeper',
+                message=f'Спасибо за регистрацию. Ваш код подтверждения: {code}',
+                mail=serializer.data['email'],
+            )
             if not resp['success']:
                 user.delete()
                 return Response({'message': 'Не удалось отправить код'})
@@ -128,7 +131,11 @@ class ResendCodeView(viewsets.ViewSet):
         # генерация кода
         code = generate_auth_code()
         # отправка кода подтверждения
-        resp = send_code(mail=data.get('username'), code=code)
+        resp = send_code(
+            subject='Регистрация в приложении Budget Keeper',
+            message=f'Спасибо за регистрацию. Ваш код подтверждения: {code}',
+            mail=data.get('username'),
+        )
         if not resp['success']:
             return Response({'message': 'Не удалось отправить код'})
         auth_code.code = code
@@ -136,6 +143,81 @@ class ResendCodeView(viewsets.ViewSet):
         auth_code.save()
 
         return Response({'message': 'Код успешно отправлен'})
+
+
+class SendRestoreCodeView(viewsets.ViewSet):
+    """
+    Вьюшка для отправки кода восстановления пароля на почту пользователя
+
+    :param request: username - логин пользователя (равен почте)
+    :return:
+    """
+    def create(self, request):
+        data = request.data
+        try:
+            user = User.objects.get(username=data.get('username'))
+        except User.DoesNotExist:
+            return Response(
+                {'Error': 'Пользователь с данным логином не найден'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        auth_code, created = AuthCode.objects.get_or_create(user=user)
+        # генерация кода
+        code = generate_auth_code()
+        # отправка кода подтверждения
+        resp = send_code(
+            subject='Восстановления пароля Budget Keeper',
+            message=f'Код для восстановления пароля: {code}',
+            mail=data.get('username'),
+        )
+        if not resp['success']:
+            return Response({'message': 'Не удалось отправить код'})
+        auth_code.code = code
+        auth_code.end_date = timezone.now() + timezone.timedelta(minutes=10)
+        auth_code.save()
+
+        return Response({'message': 'Код успешно отправлен'})
+
+
+class RestorePasswordView(viewsets.ViewSet):
+    """
+    Вьюшка для восстановления пароля
+
+    :param request: username - логин пользователя (равен почте)
+    :param request: code - код активации из сообщения на почте
+    :param request: password - пароль
+    :param request: repeat_password - повторный пароль для подтверждения
+    :return:
+    """
+    def create(self, request):
+        data = request.data
+        try:
+            user = User.objects.get(username=data.get('username'))
+        except User.DoesNotExist:
+            return Response(
+                {'Error': 'Пользователь с данным логином не найден'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        auth_code = AuthCode.objects.filter(
+            user=user,
+            code=data.get('code'),
+            end_date__gte=timezone.now(),
+        ).all()
+        if not auth_code:
+            return Response(
+                {'Error': 'Код истек или введен неверно'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if data.get('password') != data.get('repeat_password'):
+            return Response(
+                {'Error': 'Пароли не совпадают'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(data.get('password'))
+        user.save()
+        return Response({'message': 'Пароль успешно обновлен'})
 
 
 class BillViewSet(viewsets.ModelViewSet):
