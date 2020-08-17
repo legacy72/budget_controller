@@ -17,8 +17,8 @@ class OperationTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'operation_type', 'code_name', )
-    list_filter = ('name', 'operation_type', 'code_name', )
+    list_display = ('name', 'operation_type', 'code_name', 'user', )
+    list_filter = ('name', 'operation_type', 'code_name', 'user', )
 
 
 @admin.register(Transaction)
