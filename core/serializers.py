@@ -50,7 +50,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'user', 'name', 'operation_type', 'operation_type_name')
+        fields = ('id', 'user', 'name', 'operation_type', 'operation_type_name', 'code_name')
 
 
 class TransactionSerializer(serializers.ModelSerializer):

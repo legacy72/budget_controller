@@ -61,6 +61,7 @@ class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     operation_type = models.ForeignKey(OperationType, on_delete=models.CASCADE)
     name = models.CharField(verbose_name='Название', max_length=255)
+    code_name = models.CharField(verbose_name='Кодовое название', max_length=255, null=True)
 
     class Meta:
         verbose_name = 'Категория'
