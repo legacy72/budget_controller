@@ -559,7 +559,7 @@ class StatisticViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d")
+        start_date = timezone.make_aware(timezone.datetime.strptime(start_date_param, "%Y-%m-%d"))
         end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d") if end_date_param else get_last_date()
 
         statistic = []

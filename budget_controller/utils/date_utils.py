@@ -9,4 +9,5 @@ def get_last_date():
     """
     Получение последнего дня месяца для date__range фильтра
     """
-    return timezone.now().date() + timezone.timedelta(days=1)
+    current_datetime = timezone.now() + timezone.timedelta(days=1)
+    return current_datetime.replace(hour=0, minute=0, second=0)
