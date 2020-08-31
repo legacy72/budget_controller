@@ -16,6 +16,7 @@ from .models import (
 from .serializers import (
     UserSerializer, BillSerializer, CategorySerializer, TransactionSerializer, PlannedBudgetSerializer
 )
+from budget_controller.utils.date_utils import get_last_date
 from budget_controller.utils.mail import send_code, generate_auth_code
 
 
@@ -559,14 +560,14 @@ class StatisticViewSet(viewsets.ViewSet):
             )
 
         start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d")
-        end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d") if end_date_param else timezone.now()
+        end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d") if end_date_param else get_last_date()
 
         statistic = []
 
         transactions = Transaction.objects\
             .filter(
                 user=user,
-                date__range=(start_date, end_date),
+                date__range=(start_date, end_date),  # TODO: DateTimeField Transaction.date received a naive datetime
             )\
             .select_related('bill', 'category', 'category__operation_type')\
             .order_by('date')
