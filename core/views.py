@@ -344,7 +344,7 @@ class PlannedBudgetViewSet(viewsets.ModelViewSet):
         year = self.request.query_params.get('year', timezone.now().year)
 
         # создание нулевого бюджета по каждой основной категории, если его ещё нет
-        categories = Category.objects.filter(user__isnull=True).all()
+        categories = Category.objects.filter(Q(user__isnull=True) | Q(user=user)).all()
         for category in categories:
             planned_budget = PlannedBudget.objects.filter(
                 user=user,
